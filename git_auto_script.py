@@ -78,6 +78,8 @@ import json
 import sys
 from curl_cffi import Session
 from yahooquery import Ticker
+import threading
+import time
 #####################################################################################################
 class GitRepoUpdater:
     def __init__(self, base_repo_url, local_path, username, token):
@@ -165,10 +167,12 @@ class GitRepoUpdater:
                 print(f"Erreur lors du chargement de '{symbols_file}': {e}")
                 return False
             
-            print(f"** Chargement de la liste des symbols fait: {len(symbols)} symbols")
+            
+            nb_symbols = len(symbols)
+            id_avancement = 0
+            print(f"** Chargement de la liste des symbols fait: {nb_symbols} symbols")
 
-            for symbol in symbols:
-                #Write symbol_datas
+            def process_symbol(symbol):
                 try:
                     session = Session(impersonate="chrome")
                     ticker = Ticker(symbol, session=session, formatted=False)
@@ -185,9 +189,28 @@ class GitRepoUpdater:
                     with open(file_symbol_datas_history, 'w') as f:
                         f.write(symbol_datas_history)
 
-                    print(f"File '{symbol}' created/updated in output directory with timestamp: {timestamp_str}")
+                    id_avancement +=1
+                    print(f"File '{symbol}' created/updated {id_avancement}/{nb_symbols}")
                 except Exception as e:
                     print(f"An unexpected error occurred for {symbol} in create_info_files: {e}")
+
+            threads = []
+            max_threads = 10
+            for symbol in symbols:
+                while threading.active_count() > max_threads:
+                    # Wait for a thread to finish
+                    for t in threads:
+                        if not t.is_alive():
+                            threads.remove(t)
+                    # Sleep briefly to avoid busy waiting
+                    time.sleep(0.1)
+                t = threading.Thread(target=process_symbol, args=(symbol,))
+                t.start()
+                threads.append(t)
+
+            # Wait for all threads to finish
+            for t in threads:
+                t.join()
 
 
             return True
