@@ -178,8 +178,8 @@ class GitRepoUpdater:
                     symbol_datas = json.dumps(list(ticker.all_modules.items()), indent=2) 
                     symbol_datas_history = ticker.history(period="max",interval="1mo").to_json(indent=2)
 
-                    file_symbol_datas = os.path.join(current_path, f'{symbol}')
-                    file_symbol_datas_history = os.path.join(current_path, f'{symbol}_history')
+                    file_symbol_datas = os.path.join(current_path, f'{symbol}.json')
+                    file_symbol_datas_history = os.path.join(current_path, f'{symbol}_history.json')
 
                     with open(file_symbol_datas, 'w') as f:
                         f.write(symbol_datas)
