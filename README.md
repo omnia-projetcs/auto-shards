@@ -26,33 +26,44 @@ The script is designed to handle potential push conflicts by first attempting to
 1.  **Get the Script:**
     Download or copy the `git_auto_script.py` file to your local machine.
 
-2.  **Configure Credentials (IMPORTANT!):**
-    Open `git_auto_script.py` in a text editor. You **MUST** configure your Git credentials and repository details in the `if __name__ == "__main__":` block at the end of the file:
+2.  **Create and Configure `config.json` (IMPORTANT!):**
+    Configuration for the script, including your Git credentials and repository details, is managed through a `config.json` file.
 
-    ```python
-    # !!! IMPORTANT SECURITY WARNING !!!
-    # You must replace the placeholder GIT_USERNAME and GIT_TOKEN with your
-    # actual GitHub username and a Personal Access Token (PAT).
-    # Hardcoding credentials directly in the script is a security risk.
-    # Consider using environment variables or a more secure credential management
-    # system for production use. This script is for demonstration purposes of the
-    # requested functionality. Ensure the PAT has the necessary permissions
-    # (e.g., 'repo' scope) to clone and push to the specified repository.
-    # Do not commit this file with your real credentials to a public repository.
-    BASE_REPO_URL = "https://github.com/omnia-projetcs/auto-shards.git" # Target repository
-    LOCAL_REPO_PATH = "./auto-shards-repo-class"      # Local directory for the clone
-    GIT_USERNAME = "YOUR_GITHUB_USERNAME"             # Replace with your GitHub username
-    GIT_TOKEN = "YOUR_GITHUB_PERSONAL_ACCESS_TOKEN"   # Replace with your GitHub PAT
-    ```
+    a.  **Create `config.json`:**
+        In the same directory as `git_auto_script.py`, copy the example configuration file `config.example.json` to a new file named `config.json`.
+        On Linux/macOS, you can do this with:
+        ```bash
+        cp config.example.json config.json
+        ```
+        On Windows:
+        ```bash
+        copy config.example.json config.json
+        ```
 
-    *   **`BASE_REPO_URL`**: The URL of the Git repository you want to manage.
-    *   **`LOCAL_REPO_PATH`**: The local directory where the script will clone the repository. This will be created if it doesn't exist.
-    *   **`GIT_USERNAME`**: Your GitHub username.
-    *   **`GIT_TOKEN`**: Your GitHub Personal Access Token (PAT). **Do not use your password.**
-        *   Create a PAT from your GitHub account settings (Developer settings -> Personal access tokens).
-        *   The PAT needs appropriate permissions (scopes) to read and write to the repository (e.g., the `repo` scope).
+    b.  **Edit `config.json`:**
+        Open `config.json` in a text editor and replace the placeholder values with your actual details. The file should look like this:
 
-    **Security Warning:** Hardcoding credentials (like your PAT) directly into a script is a significant security risk, especially if the script is shared or committed to version control. For production or sensitive environments, use more secure methods like environment variables, Git credential helpers, or SSH-based authentication. The check included in the script to prevent running with placeholder credentials is a safety measure, not a replacement for secure credential management.
+        ```json
+        {
+          "BASE_REPO_URL": "https://github.com/your-user/your-repo.git",
+          "GIT_USERNAME": "YOUR_GITHUB_USERNAME",
+          "GIT_TOKEN": "YOUR_GITHUB_PERSONAL_ACCESS_TOKEN",
+          "LOCAL_REPO_PATH": "./my-local-clone-path"
+        }
+        ```
+
+        *   **`BASE_REPO_URL`**: The URL of the Git repository you want to manage (e.g., `"https://github.com/omnia-projetcs/auto-shards.git"`).
+        *   **`GIT_USERNAME`**: Your GitHub username.
+        *   **`GIT_TOKEN`**: Your GitHub Personal Access Token (PAT). **Do not use your password.**
+            *   Create a PAT from your GitHub account settings (Developer settings -> Personal access tokens).
+            *   The PAT needs appropriate permissions (scopes) to read and write to the repository (e.g., the `repo` scope).
+        *   **`LOCAL_REPO_PATH`**: The local directory path where the script will clone the repository (e.g., `"./auto-shards-repo-json-config"`). This will be created if it doesn't exist.
+
+3.  **Security Warning & `.gitignore`:**
+    *   **Crucial:** The `config.json` file contains your sensitive credentials (`GIT_TOKEN`). **DO NOT COMMIT `config.json` TO ANY GIT REPOSITORY.**
+    *   The project includes a `.gitignore` file that lists `config.json` to help prevent accidental commits of this file.
+    *   Hardcoding credentials, even in a local JSON file, carries risks. For production or highly sensitive environments, consider more advanced credential management solutions like environment variables, dedicated secrets management tools, or SSH-based authentication for Git.
+    *   The script includes a check to prevent running if it detects the default placeholder values from `config.example.json` in your `config.json`. This is a safety measure, not a substitute for secure credential handling.
 
 ## How to Run
 
@@ -63,10 +74,20 @@ The script is designed to handle potential push conflicts by first attempting to
     python git_auto_script.py
     ```
 
+Alternatively, on Unix-like systems (Linux/macOS), you can make the script executable first:
+  ```bash
+  chmod +x git_auto_script.py
+  ```
+Then run it directly:
+  ```bash
+  ./git_auto_script.py
+  ```
+This is possible due to the shebang line added at the top of the script.
+
 ## Functionality Details
 
--   **Target Repository:** The script is configured to work with `https://github.com/omnia-projetcs/auto-shards.git` by default but can be changed via the `BASE_REPO_URL` constant.
--   **Local Clone:** A local copy of the repository will be stored in the directory specified by `LOCAL_REPO_PATH` (default: `./auto-shards-repo-class`).
+-   **Target Repository:** The script is configured to work with the repository specified in `config.json` (`BASE_REPO_URL`).
+-   **Local Clone:** A local copy of the repository will be stored in the directory specified in `config.json` (`LOCAL_REPO_PATH`).
 -   **Output Files:** The script creates/updates `info1.txt` through `info5.txt` in an `output/` subdirectory within the cloned local repository. Each file contains the timestamp of its creation/update.
 -   **Conflict Resolution:** If a direct `git push` fails due to new commits on the remote (non-fast-forward error), the script will automatically:
     1.  Attempt `git pull origin main --rebase` to rebase local commits on top of remote changes.
