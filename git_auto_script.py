@@ -167,9 +167,7 @@ class GitRepoUpdater:
                 print(f"Erreur lors du chargement de '{symbols_file}': {e}")
                 return False
             
-            
             nb_symbols = len(symbols)
-            id_avancement = 0
             print(f"** Chargement de la liste des symbols fait: {nb_symbols} symbols")
 
             def process_symbol(symbol):
@@ -189,8 +187,7 @@ class GitRepoUpdater:
                     with open(file_symbol_datas_history, 'w') as f:
                         f.write(symbol_datas_history)
 
-                    id_avancement +=1
-                    print(f"File '{symbol}' created/updated {id_avancement}/{nb_symbols}")
+                    print(f"File '{symbol}' created/updated")
                 except Exception as e:
                     print(f"An unexpected error occurred for {symbol} in create_info_files: {e}")
 
