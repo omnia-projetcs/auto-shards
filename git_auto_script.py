@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # git_auto_script.py
 #
 # Purpose:
@@ -15,31 +16,31 @@
 # 2. Git command-line tool installed on your system.
 #
 # Configuration:
-# Credentials and repository settings MUST be configured by editing the constants
-# in the `if __name__ == "__main__":` block at the end of this script.
-# This includes:
-#   - `BASE_REPO_URL`: The target Git repository URL.
-#   - `LOCAL_REPO_PATH`: The local directory for the repository clone.
-#   - `GIT_USERNAME`: Your GitHub username.
-#   - `GIT_TOKEN`: Your GitHub Personal Access Token (PAT).
+# This script loads its configuration (repository URL, local path, Git username,
+# and Git Personal Access Token) from a JSON file named 'config.json'.
+# You must create 'config.json' in the same directory as this script.
+# You can copy 'config.example.json' to 'config.json' and then edit it
+# with your actual details.
 #
 # !!! IMPORTANT SECURITY WARNING !!!
-# You must replace the placeholder GIT_USERNAME and GIT_TOKEN in the main
-# execution block with your actual GitHub username and a Personal Access Token (PAT).
-# Hardcoding credentials directly in the script is a security risk.
-# This script includes a check to prevent running with default placeholder values.
-# Consider using environment variables or a more secure credential management
-# system for production use. Ensure the PAT has the necessary permissions
-# (e.g., 'repo' scope) to clone and push to the specified repository.
-# Do not commit this file with your real credentials to a public repository.
+# Your Git Personal Access Token (PAT) and other configuration details are
+# stored in 'config.json'.
+# - Ensure 'config.json' is NOT committed to any version control system.
+#   The provided .gitignore file should prevent this.
+# - Protect 'config.json' as it contains sensitive credentials.
+# - For production or highly sensitive environments, consider more secure
+#   credential management (e.g., environment variables, vault solutions).
+# This script includes a check to prevent running with default placeholder
+# values from 'config.example.json' found in your 'config.json'.
 #
 # How to run:
-# 1. Save this script as `git_auto_script.py`.
-# 2. Configure your credentials and repository details in the
-#    `if __name__ == "__main__":` block at the end of the script.
+# 1. Ensure 'config.json' is created and correctly populated with your
+#    repository details and credentials (see 'config.example.json').
+# 2. Save this script as `git_auto_script.py`.
 # 3. Open your terminal or command prompt.
-# 4. Navigate to the directory where you saved the script.
-# 5. Run the script using the command: python git_auto_script.py
+# 4. Navigate to the directory where you saved the script and `config.json`.
+# 5. Make the script executable (on Linux/macOS): chmod +x git_auto_script.py
+# 6. Run the script: ./git_auto_script.py  (or python3 git_auto_script.py)
 #
 # What the script does:
 # - Initializes a `GitRepoUpdater` object with repository URL, local path,
@@ -72,6 +73,8 @@ import os
 import subprocess
 from datetime import datetime
 import shutil # shutil might be used later for directory cleanup
+import json
+import sys
 
 class GitRepoUpdater:
     def __init__(self, base_repo_url, local_path, username, token):
@@ -302,34 +305,57 @@ class GitRepoUpdater:
 
 if __name__ == "__main__":
     # !!! IMPORTANT SECURITY WARNING !!!
-    # You must replace the placeholder GIT_USERNAME and GIT_TOKEN with your
-    # actual GitHub username and a Personal Access Token (PAT).
-    # Hardcoding credentials directly in the script is a security risk.
-    # Consider using environment variables or a more secure credential management
-    # system for production use. This script is for demonstration purposes of the
-    # requested functionality. Ensure the PAT has the necessary permissions
-    # (e.g., 'repo' scope) to clone and push to the specified repository.
-    # Do not commit this file with your real credentials to a public repository.
+    # Configuration, including your GitHub username and Personal Access Token (PAT),
+    # is loaded from 'config.json'. You MUST create this file (e.g., by copying
+    # 'config.example.json') and populate it with your actual credentials.
+    #
+    # Committing 'config.json' with real credentials to version control is a
+    # significant security risk. Ensure 'config.json' is listed in your .gitignore
+    # file to prevent accidental commits.
+    #
+    # This script includes a check to prevent running with default placeholder
+    # values. Ensure the PAT has the necessary permissions (e.g., 'repo' scope)
+    # to clone and push to the repository. For production, consider more secure
+    # credential management like environment variables or vault solutions.
 
-    BASE_REPO_URL = "https://github.com/omnia-projetcs/auto-shards.git"
-    LOCAL_REPO_PATH = "./auto-shards-repo-class" # Distinct local path for class-based script
-    GIT_USERNAME = "YOUR_GITHUB_USERNAME"  # Replace with your GitHub username
-    GIT_TOKEN = "YOUR_GITHUB_PERSONAL_ACCESS_TOKEN"  # Replace with your GitHub PAT
+    config_filename = "config.json"
 
-    print(f"Starting script with: User='{GIT_USERNAME}', LocalPath='{LOCAL_REPO_PATH}'")
+    try:
+        with open(config_filename, 'r') as f:
+            config = json.load(f)
+    except FileNotFoundError:
+        print(f"Error: Configuration file '{config_filename}' not found.")
+        print(f"Please copy 'config.example.json' to '{config_filename}' and fill in your details.")
+        sys.exit(1)
+    except json.JSONDecodeError:
+        print(f"Error: Could not decode JSON from '{config_filename}'. Please check its format.")
+        sys.exit(1)
+
+    try:
+        BASE_REPO_URL = config["BASE_REPO_URL"]
+        LOCAL_REPO_PATH = config["LOCAL_REPO_PATH"]
+        GIT_USERNAME = config["GIT_USERNAME"]
+        GIT_TOKEN = config["GIT_TOKEN"]
+    except KeyError as e:
+        print(f"Error: Missing key {e} in '{config_filename}'.")
+        print(f"Please ensure '{config_filename}' contains 'BASE_REPO_URL', 'LOCAL_REPO_PATH', 'GIT_USERNAME', and 'GIT_TOKEN'.")
+        sys.exit(1)
+
+    print(f"Starting script with configuration from '{config_filename}': User='{GIT_USERNAME}', LocalPath='{LOCAL_REPO_PATH}'")
 
     if GIT_USERNAME == "YOUR_GITHUB_USERNAME" or GIT_TOKEN == "YOUR_GITHUB_PERSONAL_ACCESS_TOKEN":
-        print("\nERROR: Please replace placeholder GIT_USERNAME and GIT_TOKEN in the script before running.")
+        print(f"\nERROR: Please replace placeholder credentials in '{config_filename}' with your actual GitHub username and Personal Access Token.")
         print("Script will not execute with placeholder credentials.\n")
-    else:
-        updater = GitRepoUpdater(
-            base_repo_url=BASE_REPO_URL,
-            local_path=LOCAL_REPO_PATH,
-            username=GIT_USERNAME,
-            token=GIT_TOKEN
-        )
+        sys.exit(1)
 
-        if updater.run_update():
-            print("Script finished successfully.")
-        else:
-            print("Script finished with errors. Please review the output above.")
+    updater = GitRepoUpdater(
+        base_repo_url=BASE_REPO_URL,
+        local_path=LOCAL_REPO_PATH,
+        username=GIT_USERNAME,
+        token=GIT_TOKEN
+    )
+
+    if updater.run_update():
+        print("Script finished successfully.")
+    else:
+        print("Script finished with errors. Please review the output above.")
