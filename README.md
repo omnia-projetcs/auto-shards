@@ -13,7 +13,7 @@ The script is designed to handle potential push conflicts by first attempting to
 - Commits the changes with a standardized message.
 - Pushes changes to the `main` branch.
 - Handles push conflicts by attempting `git pull --rebase` followed by `git push --force`.
-- Configurable via constants in the script's main execution block.
+- Configurable via a `config.json` file.
 - Class-based structure for better organization.
 
 ## Prerequisites
@@ -54,9 +54,19 @@ The script is designed to handle potential push conflicts by first attempting to
 
         *   **`BASE_REPO_URL`**: The URL of the Git repository you want to manage (e.g., `"https://github.com/omnia-projetcs/auto-shards.git"`).
         *   **`GIT_USERNAME`**: Your GitHub username.
-        *   **`GIT_TOKEN`**: Your GitHub Personal Access Token (PAT). **Do not use your password.**
-            *   Create a PAT from your GitHub account settings (Developer settings -> Personal access tokens).
-            *   The PAT needs appropriate permissions (scopes) to read and write to the repository (e.g., the `repo` scope).
+        *   `GIT_TOKEN`: Your GitHub Personal Access Token (PAT). **Do not use your GitHub password.**
+            To create a PAT:
+            1.  Ensure your email address is verified on GitHub.
+                2.  Navigate to your GitHub settings: Click on your profile picture in the upper-right corner, then click **Settings**.
+                3.  In the left sidebar, scroll down and click **Developer settings**.
+                4.  In the left sidebar, under **Personal access tokens**, click **Tokens (classic)**.
+                    *(For a more secure, fine-grained token, you can select "Fine-grained tokens". This allows you to scope access to specific repositories and permissions, such as "Contents: Read & write" for the target repository. However, "Tokens (classic)" with the `repo` scope is often simpler for general command-line access to all your repositories.)*
+                5.  Click **Generate new token**, and then confirm by clicking **Generate new token (classic)** if prompted.
+                6.  In the **Note** field, give your token a descriptive name (e.g., "git_auto_script_token").
+                7.  Set an **Expiration** for your token (e.g., 30 days, 90 days, or custom). GitHub recommends setting an expiration.
+                8.  Under **Select scopes**, check the box next to **`repo`**. This will grant the token full control of private repositories, including read and write access, which is needed by this script to clone, pull, and push.
+                9.  Scroll down and click **Generate token**.
+                10. **Important:** Copy your new PAT immediately. GitHub will not show it to you again. Store it securely until you add it to your `config.json` file.
         *   **`LOCAL_REPO_PATH`**: The local directory path where the script will clone the repository (e.g., `"./auto-shards-repo-json-config"`). This will be created if it doesn't exist.
 
 3.  **Security Warning & `.gitignore`:**
