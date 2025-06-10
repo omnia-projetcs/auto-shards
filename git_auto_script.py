@@ -69,13 +69,16 @@
 #   your PAT has push access.
 
 # --- Script Start ---
+#####################################################################################################
 import os
 import subprocess
 from datetime import datetime
 import shutil # shutil might be used later for directory cleanup
 import json
 import sys
-
+from curl_cffi import Session
+from yahooquery import Ticker
+#####################################################################################################
 class GitRepoUpdater:
     def __init__(self, base_repo_url, local_path, username, token):
         self.local_path = local_path
@@ -139,27 +142,54 @@ class GitRepoUpdater:
 
     def create_info_files(self):
         """
-        Creates or updates 5 info files with the current timestamp in self.output_dir.
-        Returns True on success, False on failure.
+        Update symbol history by date
         """
         try:
             # Ensure the output directory exists
-            os.makedirs(self.output_dir, exist_ok=True)
-            print(f"Ensured output directory exists: '{self.output_dir}'")
-
             now = datetime.now()
-            timestamp_str = now.strftime("%Y-%m-%d %H:%M:%S")
-            filenames = [f"info{i}.txt" for i in range(1, 6)]
+            timestamp_str = now.strftime("%Y-%m-%d")
+            current_path = os.path.join(self.output_dir, timestamp_str)
+            os.makedirs(current_path, exist_ok=True)
 
-            for filename in filenames:
-                file_path = os.path.join(self.output_dir, filename)
+            #Load symbol list
+            # Charger le fichier symbols.json et extraire les symboles un par un
+            
+            symbols_file = "symbols.json"
+            print(f"** Chargement du fichier {symbols_file}")
+            try:
+                with open(symbols_file, "r") as f:
+                    symbols_data = json.load(f)
+                # symbols_data is a list of dicts with "symbol" keys
+                symbols = [item["symbol"] for item in symbols_data if "symbol" in item]
+            except Exception as e:
+                print(f"Erreur lors du chargement de '{symbols_file}': {e}")
+                return False
+            
+            print(f"** Chargement de la liste des symbols fait: {len(symbols)} symbols")
+
+            for symbol in symbols:
+                #Write symbol_datas
                 try:
-                    with open(file_path, 'w') as f:
-                        f.write(timestamp_str)
-                    print(f"File '{file_path}' created/updated in output directory with timestamp: {timestamp_str}")
-                except (IOError, OSError) as e:
-                    print(f"Error writing to file '{file_path}': {e}")
-                    return False
+                    session = Session(impersonate="chrome")
+                    ticker = Ticker(symbol, session=session, formatted=False)
+
+                    symbol_datas = json.dumps(list(ticker.all_modules.items()), indent=2) 
+                    symbol_datas_history = ticker.history(period="max",interval="1mo").to_json(indent=2)
+
+                    file_symbol_datas = os.path.join(current_path, f'{symbol}')
+                    file_symbol_datas_history = os.path.join(current_path, f'{symbol}_history')
+
+                    with open(file_symbol_datas, 'w') as f:
+                        f.write(symbol_datas)
+
+                    with open(file_symbol_datas_history, 'w') as f:
+                        f.write(symbol_datas_history)
+
+                    print(f"File '{symbol}' created/updated in output directory with timestamp: {timestamp_str}")
+                except Exception as e:
+                    print(f"An unexpected error occurred for {symbol} in create_info_files: {e}")
+
+
             return True
         except Exception as e:
             print(f"An unexpected error occurred in create_info_files: {e}")
